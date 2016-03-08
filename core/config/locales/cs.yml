@@ -1,5 +1,8 @@
 cs:
   refinery:
+    js:
+      admin:
+        confirm_changes: Změny které jste udělal budou ztraceny. Jste si jist pokračováním bez uložení?
     plugins:
       refinery_core:
         title: Refinery
@@ -16,7 +19,7 @@ cs:
     site_bar:
       log_out: Odhlásit
       switch_to_your_website: Přepnout na web
-      switch_to_your_website_editor: Přepnout do editoru
+      switch_to_your_website_editor: Přepnout do administrace
     admin:
       menu:
         reorder_menu: Přeuspořádat menu
@@ -32,14 +35,14 @@ cs:
         cancel: Storno
         cancel_lose_changes: Pokud akci stornujete všechny provedené změny budou ztraceny
         delete: Smazat
-        previous: Předchozí
-        next: Další
         close: Zavřít
       image_picker:
         none_selected: Zatím není vybrán žádný obrázek, klikněte zde pro přidání.
         remove_current: Smazat vybraný obrázek
         change: Klikněte zde pro vybrání obrázku
         show: Zobrazit
+      locale_picker:
+        language: Jazyk
       resource_picker:
         download_current: Stáhnout vybraný soubor
         opens_in_new_window: Otevřít v novém okně
@@ -51,13 +54,17 @@ cs:
         button_text: Hledat
         results_for_html: "Výsledky hledání pro &#8216;<em>%{query}</em>&#8217;"
         no_results: Žádné záznamy nenalezeny
+        cancel_search: 'Zrušit vyhledávání'
+        input:
+          placeholder: "Hledat&8230;"
+          help: "Vložte nejméně 3 znaky ze slova, které vyhledáváte."
       delete:
-        message: Opravdu chcete smazat '%{title}'?
+        message: "Opravdu chcete smazat '%{title}'?"
       error_messages:
         problems_in_following_fields: Vyskytl se problém s těmito údaji
       help: nápověda
       form_advanced_options_menu:
-        advanced_options: Zpřístupní rozšířené nastavení ako například nastavení menu a meta tagů
+        advanced_options: Zpřístupní rozšířené nastavení jako například nastavení menu a meta tagů
         toggle_advanced_options: Rozšířené nastavení
         save_as_draft: Uložit jako pracovní verzi
     message:

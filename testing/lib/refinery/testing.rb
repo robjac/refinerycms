@@ -1,6 +1,6 @@
 require 'refinerycms-core'
 require 'rspec-rails'
-require 'factory_girl_rails'
+require 'factory_girl'
 
 module Refinery
   autoload :TestingGenerator, 'generators/refinery/testing/testing_generator'
@@ -27,6 +27,6 @@ module Refinery
     require 'refinery/testing/railtie'
 
     autoload :ControllerMacros, 'refinery/testing/controller_macros'
-    autoload :RequestMacros, 'refinery/testing/request_macros'
+    autoload :FeatureMacros, 'refinery/testing/feature_macros'
   end
 end

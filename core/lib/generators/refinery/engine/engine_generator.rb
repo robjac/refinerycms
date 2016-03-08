@@ -1,8 +1,9 @@
-require 'rails/generators/named_base'
 require 'refinery/extension_generation'
+require 'refinery/generators/named_base'
+require 'refinery/generators/generated_attribute'
 
 module Refinery
-  class EngineGenerator < Rails::Generators::NamedBase
+  class EngineGenerator < Refinery::Generators::NamedBase
     source_root Pathname.new(File.expand_path('../templates', __FILE__))
 
     include Refinery::ExtensionGeneration
@@ -19,6 +20,14 @@ module Refinery
 
     def generate
       default_generate!
+    end
+
+    def backend_route
+      @backend_route ||= if namespacing.underscore != plural_name
+        %Q{"#\{Refinery::Core.backend_route\}/#{namespacing.underscore}"}
+      else
+        "Refinery::Core.backend_route"
+      end
     end
 
     protected

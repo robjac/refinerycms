@@ -11,15 +11,19 @@ module Refinery
       include ActiveSupport::Configurable
 
       config_accessor :roots, :menu_tag, :list_tag, :list_item_tag, :css, :dom_id,
-                      :max_depth, :selected_css, :first_css, :last_css
+                      :max_depth, :active_css, :selected_css, :first_css, :last_css, :list_tag_css,
+                      :link_tag_css
       self.dom_id = 'menu'
       self.css = 'menu clearfix'
       self.menu_tag = :nav
       self.list_tag = :ul
       self.list_item_tag = :li
+      self.active_css = :active
       self.selected_css = :selected
       self.first_css = :first
       self.last_css = :last
+      self.list_tag_css = 'nav'
+
       def roots
         config.roots.presence || collection.roots
       end
@@ -45,7 +49,7 @@ module Refinery
 
       def render_menu_items(menu_items)
         if menu_items.present?
-          content_tag(list_tag) do
+          content_tag(list_tag, :class => list_tag_css) do
             menu_items.each_with_index.inject(ActiveSupport::SafeBuffer.new) do |buffer, (item, index)|
               buffer << render_menu_item(item, index)
             end
@@ -53,10 +57,14 @@ module Refinery
         end
       end
 
+      def render_menu_item_link(menu_item)
+        link_to(menu_item.title, context.refinery.url_for(menu_item.url), :class => link_tag_css)
+      end
+
       def render_menu_item(menu_item, index)
         content_tag(list_item_tag, :class => menu_item_css(menu_item, index)) do
           buffer = ActiveSupport::SafeBuffer.new
-          buffer << link_to(menu_item.title, context.refinery.url_for(menu_item.url))
+          buffer << render_menu_item_link(menu_item)
           buffer << render_menu_items(menu_item_children(menu_item))
           buffer
         end
@@ -70,26 +78,20 @@ module Refinery
       end
 
       def selected_item_or_descendant_item_selected?(item)
+        Refinery.deprecate('Refinery::Pages::MenuPresenter#selected_item_or_descendant_item_selected?', when: '3.1')
         selected_item?(item) || descendant_item_selected?(item)
       end
 
       # Determine whether the supplied item is the currently open item according to Refinery.
       def selected_item?(item)
-        path = context.request.path
-        path = path.force_encoding('utf-8') if path.respond_to?(:force_encoding)
-
         # Ensure we match the path without the locale, if present.
-        if %r{^/#{::I18n.locale}/} === path
-          path = path.split(%r{^/#{::I18n.locale}}).last.presence || "/"
-        end
+        path = match_locale_for(encoded_path)
 
         # First try to match against a "menu match" value, if available.
-        return true if item.try(:menu_match).present? && path =~ Regexp.new(item.menu_match)
+        return true if menu_match_is_available?(item, path)
 
         # Find the first url that is a string.
-        url = [item.url]
-        url << ['', item.url[:path]].compact.flatten.join('/') if item.url.respond_to?(:keys)
-        url = url.last.match(%r{^/#{::I18n.locale.to_s}(/.*)}) ? $1 : url.detect{|u| u.is_a?(String)}
+        url = find_url_for(item)
 
         # Now use all possible vectors to try to find a valid match
         [path, URI.decode(path)].include?(url) || path == "/#{item.original_id}"
@@ -98,7 +100,8 @@ module Refinery
       def menu_item_css(menu_item, index)
         css = []
 
-        css << selected_css if selected_item_or_descendant_item_selected?(menu_item)
+        css << active_css if descendant_item_selected?(menu_item)
+        css << selected_css if selected_item?(menu_item)
         css << first_css if index == 0
         css << last_css if index == menu_item.shown_siblings.length
 
@@ -113,6 +116,29 @@ module Refinery
         !max_depth || menu_item.depth < max_depth
       end
 
+      def encoded_path
+        path = context.request.path
+        path.force_encoding('utf-8') if path.respond_to?(:force_encoding)
+        path
+      end
+
+      def match_locale_for(path)
+        if %r{^/#{::I18n.locale}/} === path
+          path.split(%r{^/#{::I18n.locale}}).last.presence || "/"
+        else
+          path
+        end
+      end
+
+      def menu_match_is_available?(item, path)
+        item.try(:menu_match).present? && path =~ Regexp.new(item.menu_match)
+      end
+
+      def find_url_for(item)
+        url = [item.url]
+        url << ['', item.url[:path]].compact.flatten.join('/') if item.url.respond_to?(:keys)
+        url.last.match(%r{^/#{::I18n.locale.to_s}(/.*)}) ? $1 : url.detect{ |u| u.is_a?(String) }
+      end
     end
   end
 end

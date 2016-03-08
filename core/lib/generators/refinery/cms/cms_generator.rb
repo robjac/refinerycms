@@ -10,7 +10,7 @@ module Refinery
                            :desc => "Allow Refinery to remove default Rails files in a fresh installation"
     class_option :heroku,  :type => :string, :default => nil, :group => :runtime, :banner => 'APP_NAME',
                            :desc => "Deploy to Heroku after the generator has run."
-    class_option :stack,   :type => :string, :default => 'cedar', :group => :runtime,
+    class_option :stack,   :type => :string, :default => 'cedar-14', :group => :runtime,
                            :desc => "Specify which Heroku stack you want to use. Requires --heroku option to function."
     class_option :skip_db, :type => :boolean, :default => false, :aliases => nil, :group => :runtime,
                            :desc => "Skip over any database creation, migration or seeding."
@@ -42,14 +42,12 @@ module Refinery
 
       run_additional_generators! if self.options[:fresh_installation]
 
-      migrate_database!
-
-      seed_database!
+      prepare_database!
 
       deploy_to_hosting?
     end
 
-  protected
+    protected
 
     def append_asset_pipeline!
       application_css = 'app/assets/stylesheets/application.css'
@@ -77,20 +75,33 @@ end}  end
     end
 
     def append_heroku_gems!
-      append_file 'Gemfile', %q{
+      append_file 'Gemfile', %Q{
+# The Ruby version is specified here so that Heroku uses the right version.
+ruby #{ENV['RUBY_VERSION'].inspect}
+
 # The Heroku gem allows you to interface with Heroku's API
 gem 'heroku'
 
-# Fog allows you to use S3 assets (added for Heroku)
-gem 'fog'
+group :production do
+  # Dragonfly's S3 Data Store extension allows you to use S3 assets (added for Heroku)
+  gem 'dragonfly-s3_data_store'
+
+  # Gems that are recommended for using Heroku:
+  gem 'rails_12factor'
+  gem 'puma'
 }
       # If postgres is not the database in use, Heroku still needs it.
       if destination_path.join('Gemfile').file? && destination_path.join('Gemfile').read !~ %r{gem ['"]pg['"]}
         append_file 'Gemfile', %q{
-# Postgres support (added for Heroku)
-gem 'pg'
+  # Postgres support (added for Heroku)
+  gem 'pg'
 }
       end
+
+      append_file 'Gemfile', %q{
+end
+
+} # close the production group that was opened for dragonfly, and pg.
     end
 
     def bundle!
@@ -99,7 +110,7 @@ gem 'pg'
 
     def copy_files!
       # The extension installer only installs database templates.
-      Pathname.glob(self.class.source_root.join('**', '*')).reject{|f|
+      Pathname.glob(self.class.source_root.join('**', '*')).reject{ |f|
         f.directory? or f.to_s =~ /\/db\//
       }.sort.each do |path|
         copy_file path, path.to_s.gsub(self.class.source_root.to_s, destination_path.to_s)
@@ -109,19 +120,46 @@ gem 'pg'
     def create_decorators!
       # Create decorator directories
       %w[controllers models].each do |decorator_namespace|
-        src_file_path = "app/decorators/#{decorator_namespace}/refinery/.gitkeep"
+        src_file_path = "app/decorators/#{decorator_namespace}/refinery/.keep"
         copy_file self.class.source_root.join(src_file_path), destination_path.join(src_file_path)
       end
+    end
+
+    def create_heroku_procfile!
+      create_file "Procfile" do
+        "web: bundle exec puma -C config/puma.rb"
+      end unless destination_path.join('Procfile').file?
+
+      create_file "config/puma.rb" do
+%{threads Integer(ENV['MIN_THREADS']  || 1), Integer(ENV['MAX_THREADS'] || 16)
+
+workers Integer(ENV['PUMA_WORKERS'] || 3)
+
+rackup DefaultRackup
+port ENV['PORT'] || 3000
+environment ENV['RACK_ENV'] || 'development'
+preload_app!
+
+on_worker_boot do
+  # worker specific setup
+  ActiveSupport.on_load(:active_record) do
+    ActiveRecord::Base.establish_connection
+  end
+end
+}
+      end unless destination_path.join('config', 'puma.rb').file?
     end
 
     def deploy_to_hosting?
       if heroku?
         append_heroku_gems!
 
-        bundle!
-
         # Sanity check the heroku application name and save whatever messages are produced.
         message = sanity_check_heroku_application_name!
+
+        create_heroku_procfile!
+
+        bundle!
 
         # Supply the deploy process with the previous messages to make them visible.
         deploy_to_hosting_heroku!(message)
@@ -144,7 +182,10 @@ gem 'pg'
       run "git push heroku master"
 
       say_status "Setting up the Heroku database..", nil
-      run "heroku#{' run' if options[:stack] == 'cedar'} rake db:migrate"
+      run "heroku#{' run' if options[:stack] == 'cedar-14'} rake db:migrate"
+
+      say_status "Seeding the Heroku database..", nil
+      run "heroku#{' run' if options[:stack] == 'cedar-14'} rake db:seed"
 
       say_status "Restarting servers...", nil
       run "heroku restart"
@@ -157,7 +198,7 @@ gem 'pg'
 
     def ensure_environments_are_sane!
       # Massage environment files
-      %w(development test production).map{|e| "config/environments/#{e}.rb"}.each do |env|
+      %w(development test production).map{ |e| "config/environments/#{e}.rb"}.each do |env|
         next unless destination_path.join(env).file?
 
         # Refinery does not necessarily expect action_mailer to be available as
@@ -204,10 +245,14 @@ gem 'pg'
       end
     end
 
-    def migrate_database!
+    def prepare_database!
       unless self.options[:skip_migrations]
-        rake 'railties:install:migrations'
-        rake 'db:create db:migrate' unless self.options[:skip_db]
+        command = %w[railties:install:migrations]
+        unless self.options[:skip_db]
+          command |= %w[db:create db:migrate]
+          command |= %w[db:seed] unless self.options[:skip_migrations]
+        end
+        rake command.join(' ')
       end
     end
 
@@ -217,14 +262,15 @@ gem 'pg'
         mount = %Q{
   # This line mounts Refinery's routes at the root of your application.
   # This means, any requests to the root URL of your application will go to Refinery::PagesController#home.
-  # If you would like to change where this extension is mounted, simply change the :at option to something different.
+  # If you would like to change where this extension is mounted, simply change the
+  # configuration option `mounted_path` to something different in config/initializers/refinery/core.rb
   #
   # We ask that you don't use the :as option here, as Refinery relies on it being the default of "refinery"
-  mount Refinery::Core::Engine, :at => '/'
+  mount Refinery::Core::Engine, at: Refinery::Core.mounted_path
 
 }
 
-        inject_into_file 'config/routes.rb', mount, :after => "Application.routes.draw do\n"
+        inject_into_file 'config/routes.rb', mount, after: ".routes.draw do"
       end
     end
 
@@ -260,10 +306,6 @@ gem 'pg'
       end
 
       options[:heroku] = '' if options[:heroku] == 'heroku'
-    end
-
-    def seed_database!
-      rake 'db:seed' unless self.options[:skip_db] || self.options[:skip_migrations]
     end
 
     def start_pretending?

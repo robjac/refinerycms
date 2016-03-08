@@ -1,6 +1,5 @@
 require 'refinerycms-core'
 require 'dragonfly'
-require 'rack/cache'
 
 module Refinery
   autoload :ResourcesGenerator, 'generators/refinery/resources/resources_generator'
@@ -22,4 +21,8 @@ module Refinery
       end
     end
   end
+end
+
+ActiveSupport.on_load(:active_record) do
+  require 'globalize'
 end

@@ -3,10 +3,11 @@ module Refinery
     class ResourcesController < ::Refinery::AdminController
 
       crudify :'refinery/resource',
-              :order => "updated_at DESC",
-              :xhr_paging => true
+              include: [:translations],
+              order: "updated_at DESC",
+              sortable: false
 
-      before_filter :init_dialog
+      before_action :init_dialog
 
       def new
         @resource = Resource.new if @resource.nil?
@@ -15,28 +16,28 @@ module Refinery
       end
 
       def create
-        @resources = Resource.create_resources(params[:resource])
+        @resources = Resource.create_resources(resource_params)
         @resource = @resources.detect { |r| !r.valid? }
 
-        unless params[:insert]
-          if @resources.all?(&:valid?)
-            flash.notice = t('created', :scope => 'refinery.crudify', :what => "'#{@resources.map(&:title).join("', '")}'")
-            unless from_dialog?
-              redirect_to refinery.admin_resources_path
-            else
-              @dialog_successful = true
-              render :nothing => true, :layout => true
-            end
-          else
-            self.new # important for dialogs
-            render :action => 'new'
-          end
-        else
+        if params[:insert]
           if @resources.all?(&:valid?)
             @resource_id = @resources.detect(&:persisted?).id
             @resource = nil
 
             self.insert
+          end
+        else
+          if @resources.all?(&:valid?)
+            flash.notice = t('created', :scope => 'refinery.crudify', :what => "'#{@resources.map(&:title).join("', '")}'")
+            if from_dialog?
+              @dialog_successful = true
+              render '/refinery/admin/dialog_success', layout: true
+            else
+              redirect_to refinery.admin_resources_path
+            end
+          else
+            self.new # important for dialogs
+            render 'new'
           end
         end
       end
@@ -52,14 +53,14 @@ module Refinery
           extra_condition[1] = true if extra_condition[1] == "true"
           extra_condition[1] = false if extra_condition[1] == "false"
           extra_condition[1] = nil if extra_condition[1] == "nil"
-          paginate_resources({extra_condition[0].to_sym => extra_condition[1]})
+          paginate_resources({extra_condition[0] => extra_condition[1]})
         else
           paginate_resources
         end
-        render :action => "insert"
+        render 'insert'
       end
 
-    protected
+      protected
 
       def init_dialog
         @app_dialog = params[:app_dialog].present?
@@ -76,10 +77,33 @@ module Refinery
         super unless action_name == 'insert'
       end
 
-      def paginate_resources(conditions={})
+      def paginate_resources(conditions = {})
         @resources = Resource.where(conditions).
                               paginate(:page => params[:page], :per_page => Resource.per_page(from_dialog?)).
                               order('created_at DESC')
+      end
+
+      def resource_params
+        # update only supports a single file, create supports many.
+        if action_name == 'update'
+          params.require(:resource).permit(permitted_update_resource_params)
+        else
+          params.require(:resource).permit(permitted_resource_params)
+        end
+      end
+
+      private
+
+      def permitted_resource_params
+        [
+          :resource_title, :file => []
+        ]
+      end
+
+      def permitted_update_resource_params
+        [
+          :resource_title, :file
+        ]
       end
 
     end

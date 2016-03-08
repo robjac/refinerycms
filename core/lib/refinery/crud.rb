@@ -34,7 +34,6 @@ module Refinery
         :search_conditions => '',
         :sortable => true,
         :title_attribute => "title",
-        :xhr_paging => false,
         :class_name => class_name,
         :singular_name => singular_name,
         :plural_name => plural_name
@@ -50,6 +49,7 @@ module Refinery
 
       def crudify(model_name, options = {})
         options = ::Refinery::Crud.default_options(model_name).merge(options)
+        Refinery.deprecate :xhr_paging, when: '3.1' if options[:xhr_paging]
         class_name = options[:class_name]
         singular_name = options[:singular_name]
         plural_name = options[:plural_name]
@@ -59,16 +59,16 @@ module Refinery
             #{options.inspect}
           end
 
-          prepend_before_filter :find_#{singular_name},
+          prepend_before_action :find_#{singular_name},
                                 :only => [:update, :destroy, :edit, :show]
-          prepend_before_filter :merge_position_into_params!, :only => :create
+          prepend_before_action :merge_position_into_params!, :only => :create
 
           def new
             @#{singular_name} = #{class_name}.new
           end
 
           def create
-            if (@#{singular_name} = #{class_name}.create(params[:#{singular_name}])).valid?
+            if (@#{singular_name} = #{class_name}.create(#{singular_name}_params)).valid?
               flash.notice = t(
                 'refinery.crudify.created',
                 :what => "'\#{@#{singular_name}.#{options[:title_attribute]}}'"
@@ -85,7 +85,7 @@ module Refinery
           end
 
           def update
-            if @#{singular_name}.update_attributes(params[:#{singular_name}])
+            if @#{singular_name}.update_attributes(#{singular_name}_params)
               flash.notice = t(
                 'refinery.crudify.updated',
                 :what => "'\#{@#{singular_name}.#{options[:title_attribute]}}'"
@@ -109,24 +109,29 @@ module Refinery
 
           # Finds one single result based on the id params.
           def find_#{singular_name}
-            @#{singular_name} = #{class_name}.find(params[:id],
-                                                   :include => #{options[:include].map(&:to_sym).inspect})
+            @#{singular_name} = find_#{singular_name}_scope.find(params[:id])
+          end
+
+          def find_#{singular_name}_scope
+            _finder_scope = #{class_name}.includes(#{options[:include].map(&:to_sym).inspect})
+            _finder_scope = _finder_scope.friendly if _finder_scope.respond_to?(:friendly)
+            _finder_scope
           end
 
           # Find the collection of @#{plural_name} based on the conditions specified into crudify
           # It will be ordered based on the conditions specified into crudify
           # And eager loading is applied as specified into crudify.
           def find_all_#{plural_name}(conditions = #{options[:conditions].inspect})
-            @#{plural_name} = #{class_name}.where(conditions).includes(
-                                #{options[:include].map(&:to_sym).inspect}
-                              ).order("#{options[:order]}")
+            @#{plural_name} = find_#{singular_name}_scope
+                                .where(conditions)
+                                .order("#{options[:order]}")
           end
 
           def merge_position_into_params!
             # if the position field exists, set this object as last object, given the conditions of this class.
             if #{class_name}.column_names.include?("position") && params[:#{singular_name}][:position].nil?
               params[:#{singular_name}].merge!({
-                :position => ((#{class_name}.maximum(:position, :conditions => #{options[:conditions].inspect})||-1) + 1)
+                position: ((#{class_name}.where(#{options[:conditions].inspect}).maximum(:position)||-1) + 1)
               })
             end
           end
@@ -204,19 +209,25 @@ module Refinery
             @#{plural_name} = @#{plural_name}.with_query(params[:search])
           end
 
+          def #{singular_name}_params
+            raise "Please override #{singular_name}_params with your desired parameter security."
+          end
+
           # Ensure all methods are protected so that they should only be called
           # from within the current controller.
           protected :find_#{singular_name},
+                    :find_#{singular_name}_scope,
                     :find_all_#{plural_name},
                     :paginate_all_#{plural_name},
                     :paginate_per_page,
                     :render_partial_response?,
                     :search_all_#{plural_name},
+                    :#{singular_name}_params,
                     :redirect_url,
                     :create_or_update_successful,
                     :create_or_update_unsuccessful,
                     :merge_position_into_params!
-        )
+        ), __FILE__, __LINE__
 
         # Methods that are only included when this controller is searchable.
         if options[:searchable]
@@ -228,19 +239,19 @@ module Refinery
 
                 render_partial_response?
               end
-            )
+            ), __FILE__, __LINE__
           else
             module_eval %(
               def index
-                unless searching?
-                  find_all_#{plural_name}
-                else
+                if searching?
                   search_all_#{plural_name}
+                else
+                  find_all_#{plural_name}
                 end
 
                 render_partial_response?
               end
-            )
+            ), __FILE__, __LINE__
           end
 
         else
@@ -251,14 +262,14 @@ module Refinery
 
                 render_partial_response?
               end
-            )
+            ), __FILE__, __LINE__
           else
             module_eval %(
               def index
                 find_all_#{plural_name}
                 render_partial_response?
               end
-            )
+            ), __FILE__, __LINE__
           end
 
         end
@@ -269,25 +280,22 @@ module Refinery
               find_all_#{plural_name}
             end
 
-            # Based upon http://github.com/matenia/jQuery-Awesome-Nested-Set-Drag-and-Drop
+            # Based upon https://github.com/matenia/jQuery-Awesome-Nested-Set-Drag-and-Drop
             def update_positions
               previous = nil
               params[:ul].each do |_, list|
-                # After we drop Ruby 1.8.x support the following line can be changed back to
-                # list.each do |index, hash|
-                # because there won't be an ordering issue (see https://github.com/refinery/refinerycms/issues/1585)
-                list.sort_by {|k, v| k.to_i}.map { |item| item[1] }.each_with_index do |hash, index|
-                  moved_item_id = hash['id'].split(/#{singular_name}\_?/).reject(&:empty?).first
+                list.each do |index, hash|
+                  moved_item_id = hash['id'][/\\d+\\z/]
                   @current_#{singular_name} = #{class_name}.find_by_id(moved_item_id)
 
                   if @current_#{singular_name}.respond_to?(:move_to_root)
                     if previous.present?
                       @current_#{singular_name}.move_to_right_of(#{class_name}.find_by_id(previous))
-                    else
+                    elsif !@current_#{singular_name}.root?
                       @current_#{singular_name}.move_to_root
                     end
                   else
-                    @current_#{singular_name}.update_attributes :position => index
+                    @current_#{singular_name}.update_columns position: index
                   end
 
                   if hash['children'].present?
@@ -305,10 +313,14 @@ module Refinery
 
             def update_child_positions(_node, #{singular_name})
               list = _node['children']['0']
-              list.sort_by {|k, v| k.to_i}.map { |item| item[1] }.each_with_index do |child, index|
+              child_positions_changed = false
+              list.sort_by { |k, v| k.to_i}.map { |item| item[1] }.each_with_index do |child, index|
                 child_id = child['id'].split(/#{singular_name}\_?/).reject(&:empty?).first
                 child_#{singular_name} = #{class_name}.where(:id => child_id).first
-                child_#{singular_name}.move_to_child_of(#{singular_name})
+                child_positions_changed ||= #{singular_name}.children[index] != child_#{singular_name}
+                if child_positions_changed
+                  child_#{singular_name}.move_to_child_of(#{singular_name})
+                end
 
                 if child['children'].present?
                   update_child_positions(child, child_#{singular_name})
@@ -321,25 +333,25 @@ module Refinery
             end
 
             protected :after_update_positions
-          )
+          ), __FILE__, __LINE__
         end
 
         module_eval %(
           class << self
             def pageable?
-              #{options[:paging].to_s}
+              #{options[:paging]}
             end
             alias_method :paging?, :pageable?
 
             def sortable?
-              #{options[:sortable].to_s}
+              #{options[:sortable]}
             end
 
             def searchable?
-              #{options[:searchable].to_s}
+              #{options[:searchable]}
             end
           end
-        )
+        ), __FILE__, __LINE__
 
       end
 

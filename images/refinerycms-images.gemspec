@@ -9,7 +9,7 @@ Gem::Specification.new do |s|
   s.version           = version
   s.summary           = %q{Images extension for Refinery CMS}
   s.description       = %q{Handles all image upload and processing functionality in Refinery CMS.}
-  s.email             = %q{info@refinerycms.com}
+  s.email             = %q{refinerycms@p.arndt.io}
   s.homepage          = %q{http://refinerycms.com}
   s.rubyforge_project = %q{refinerycms}
   s.authors           = ['Philip Arndt', 'Uģis Ozols', 'Rob Yurkowski']
@@ -19,6 +19,9 @@ Gem::Specification.new do |s|
   s.files             = `git ls-files`.split("\n")
   s.test_files        = `git ls-files -- spec/*`.split("\n")
 
-  s.add_dependency 'dragonfly',        '~> 0.9.14'
-  s.add_dependency 'refinerycms-core', version
+  s.add_dependency 'dragonfly',               '~> 1.0.0'
+  s.add_dependency 'globalize',               ['>= 4.0.0', '< 5.2']
+  s.add_dependency 'refinerycms-core',        version
+
+  s.required_ruby_version = Refinery::Version.required_ruby_version
 end

@@ -3,7 +3,7 @@ var initialLoad = true;
 
 init_refinery_admin = function(){
   init_interface();
-  init_sortable_menu();
+  init_flash_messages();
   init_submit_continue();
   init_modal_dialogs();
   init_tooltips();
@@ -33,13 +33,15 @@ $.fn.paginateTo = function(stateUrl) {
       // remove caching _ argument.
       $('.pagination_container .pagination a').each(function(i, a){
         $(this).attr('href', $(this).attr('href').replace(/\?\_\=[^&]+&/, '?'));
-      })
+      });
+
+      init_ajaxy_pagination();
     },
     error: function(data) {
       window.location = popstate_location;
     }
   });
-}
+};
 
 $.fn.slideTo = function(response) {
   $(this).html(response);
@@ -48,7 +50,7 @@ $.fn.slideTo = function(response) {
   init_modal_dialogs();
   init_tooltips();
   return $(this);
-}
+};
 
 $.fn.applyMinimumHeightFromChildren = function() {
   child_heights = 0;
@@ -60,7 +62,7 @@ $.fn.applyMinimumHeightFromChildren = function() {
   });
   $(this).css('min-height', child_heights);
   return $(this);
-}
+};
 
 init_modal_dialogs = function(){
   $('a[href*="dialog=true"]').not('#dialog_container a').each(function(i, anchor) {
@@ -77,7 +79,6 @@ init_modal_dialogs = function(){
                    + 'app_dialog=true&dialog=true';
 
       iframe = $("<iframe id='dialog_iframe' frameborder='0' marginheight='0' marginwidth='0' border='0'></iframe>");
-      if(!$.browser.msie) { iframe.corner('8px'); }
       iframe.dialog({
         title: $anchor.data('dialog-title')
         , modal: true
@@ -95,6 +96,24 @@ init_modal_dialogs = function(){
   });
 };
 
+onOpenDialog = function(dialog) {
+  if ($('.ui-dialog').height() < $(window).height()) {
+    if(iframed()) {
+      $(parent.document.body).addClass('hide-overflow');
+    } else {
+      $(document.body).addClass('hide-overflow');
+    }
+  }
+};
+
+onCloseDialog = function(dialog) {
+  if(iframed()) {
+    $(parent.document.body).removeClass('hide-overflow');
+  } else {
+    $(document.body).removeClass('hide-overflow');
+  }
+};
+
 refinery_dialog_success = function(e) {
   close_dialog();
 
@@ -107,7 +126,7 @@ refinery_dialog_success = function(e) {
       $('#flash_container > #flash').remove();
       $('#flash_container').append($('.pagination_container').find('#flash'));
 
-      $('#flash').css({'width': 'auto', 'visibility': ''}).fadeIn(550);
+      $('#flash').css({'width': 'auto', 'visibility': ''}).show();
       init_refinery_admin();
     }
   });
@@ -117,10 +136,10 @@ trigger_reordering = function(e, enable) {
   $menu = $("#menu");
   e.preventDefault();
   $('#menu_reorder, #menu_reorder_done').toggle();
-  $('#site_bar, #content').fadeTo(500, enable ? 0.35 : 1);
+  $('#site_bar, #content').fadeTo(0, enable ? 0.35 : 1);
 
   if(enable) {
-    $menu.find('.tab a').click(function(ev){
+    $menu.find('.tab a').on('click', function(ev){
       ev.preventDefault();
     });
   } else {
@@ -131,19 +150,11 @@ trigger_reordering = function(e, enable) {
 };
 
 trigger_reordering_content_section = function(e, enable) {
-  $menu = $("#page-tabs");
+  $menu = $("#page-tabs").sortable();
   e.preventDefault();
   $('#reorder_page_part, #reorder_page_part_done').toggle();
-  $('#site_bar, #menu, .field:not(:has(#page-tabs)), .page_part, #more_options_field, .form-actions')
-    .fadeTo(500, enable ? 0.35 : 1);
-
-  if(enable) {
-    $menu.addClass('reordering').find('.tab a').click(function(ev){
-      ev.preventDefault();
-    });
-  } else {
-    $menu.removeClass('reordering').find('.tab a').unbind('click');
-  }
+  $('#site_bar, #menu, .field:not(:has(#page-tabs)), .page_part:visible, #more_options_field, .form-actions')
+    .fadeTo(0, enable ? 0.35 : 1);
 
   $menu.sortable(enable ? 'enable' : 'disable').sortable({
     items: 'li',
@@ -156,16 +167,10 @@ trigger_reordering_content_section = function(e, enable) {
 };
 
 submit_and_continue = function(e, redirect_to) {
-  // ensure wymeditors are up to date.
-  if ($(this).hasClass('wymupdate')) {
-    $.each(WYMeditor.INSTANCES, function(index, wym)
-    {
-      wym.update();
-    });
-  }
+  visual_editor_update();
 
   $('#continue_editing').val(true);
-  $('#flash').fadeOut(250);
+  $('#flash').hide();
 
   $('.fieldWithErrors').removeClass('fieldWithErrors').addClass('field');
   $('#flash_container .errorExplanation').remove();
@@ -177,7 +182,7 @@ submit_and_continue = function(e, redirect_to) {
       if (($flash_container = $('#flash_container')).length > 0) {
         $flash_container.html(data);
 
-        $('#flash').css({'width': 'auto', 'visibility': null}).fadeIn(550);
+        $('#flash').css({'width': 'auto', 'visibility': null}).show();
 
         $('.errorExplanation').not($('#flash_container .errorExplanation')).remove();
 
@@ -195,8 +200,15 @@ submit_and_continue = function(e, redirect_to) {
 
         init_flash_messages();
 
-        //updates the form action with new URL
+        //updates the form action and locale picker links with new URLs
         $('form').attr('action', $('#new_action').attr('value'));
+        $('#switch_locale_picker > li > a').each(function(i, anchor) {
+          ($anchor = $(anchor)).attr('href',
+            $('#new_refinery_edit_page_path').attr('value')
+              + "?switch_locale="
+              + $anchor.attr('href').split('?switch_locale=').slice(-1)[0]
+          );
+        });
       }
     }, 'html'
   );
@@ -214,12 +226,9 @@ init_tooltips = function(args){
           $('.tooltip').remove();
           tooltip = $("<div class='tooltip'><div><span></span></div></div>").appendTo('#tooltip_container');
           tooltip.find("span").html($(this).attr('tooltip'));
-          if(!$.browser.msie) {
-            tooltip.corner('6px').find('span').corner('6px');
-          }
 
-          tooltip_nib_extension = $.browser.msie ? '.gif' : '.png';
-          nib = $("<img src='<%= asset_path 'refinery/tooltip-nib' %>" + tooltip_nib_extension + "' class='tooltip-nib'/>").appendTo('#tooltip_container');
+          tooltip_nib_image_src = $.browser.msie ? "<%= asset_path 'refinery/tooltip-nib.gif' %>" : "<%= asset_path 'refinery/tooltip-nib.png' %>";
+          nib = $("<img src='" + tooltip_nib_image_src + "' class='tooltip-nib'/>").appendTo('#tooltip_container');
 
           tooltip.css({
             'opacity': 0
@@ -437,14 +446,14 @@ var link_dialog = {
   },
 
   init_close: function(){
-    $('.form-actions-dialog #cancel_button').not('.wym_iframe_body .form-actions-dialog #cancel_button').click(close_dialog);
+    $('.form-actions-dialog #cancel_button').not('.visual_editor_iframe_body .form-actions-dialog #cancel_button').click(close_dialog);
 
     if (parent
         && parent.document.location.href != document.location.href
-        && parent.document.getElementById('wym_dialog_submit') != null) {
+        && parent.document.getElementById('visual_editor_dialog_submit') != null) {
       $('#dialog_container .form-actions input#submit_button').click(function(e) {
         e.preventDefault();
-        $(parent.document.getElementById('wym_dialog_submit')).click();
+        $(parent.document.getElementById('visual_editor_dialog_submit')).click();
       });
       $('#dialog_container .form-actions a.close_dialog').click(close_dialog);
     }
@@ -514,14 +523,14 @@ var link_dialog = {
 
   update_parent: function(url, title, target) {
     if (parent != null) {
-      if ((wym_href = parent.document.getElementById('wym_href')) != null) {
-        wym_href.value = url;
+      if ((visual_editor_href = parent.document.getElementById('visual_editor_href')) != null) {
+        visual_editor_href.value = url;
       }
-      if ((wym_title = parent.document.getElementById('wym_title')) != null) {
-        wym_title.value = title;
+      if ((visual_editor_title = parent.document.getElementById('visual_editor_title')) != null) {
+        visual_editor_title.value = title;
       }
-      if ((wym_target = parent.document.getElementById('wym_target')) != null) {
-        wym_target.value = target || "";
+      if ((visual_editor_target = parent.document.getElementById('visual_editor_target')) != null) {
+        visual_editor_target.value = target || "";
       }
     }
   }
@@ -532,10 +541,8 @@ var page_options = {
   , init: function(enable_parts, new_part_url, del_part_url){
 
     if (!this.initialised) {
-      // set the page tabs up, but ensure that all tabs are shown so that when wymeditor loads it has a proper height.
-      page_options.tabs = $('#page-tabs');
-      page_options.tabs.tabs({tabTemplate: '<li><a href="#{href}">#{label}</a></li>'});
-      page_options.tabs.find(' > ul li a').corner('top 5px');
+      // set the page tabs up, but ensure that all tabs are shown so that when the visual editor loads it has a proper height.
+      page_options.tabs = $('#page-tabs').tabs();
 
       part_shown = $('#page-tabs .page_part.field').not('.ui-tabs-hide');
       $('#page-tabs .page_part.field').removeClass('ui-tabs-hide');
@@ -548,7 +555,6 @@ var page_options = {
       $(document).ready($.proxy(function(){
         // hide the tabs that are supposed to be hidden.
         $('#page-tabs .page_part.field').not(this).addClass('ui-tabs-hide');
-        $('#page-tabs > ul li a').corner('top 5px');
       }, part_shown));
 
       if(this.enable_parts){
@@ -570,13 +576,17 @@ var page_options = {
   },
 
   page_part_dialog: function(){
+    var slugOptions = {
+      separator: '_'
+    }
+
     $('#new_page_part_dialog').dialog({
       title: 'Create Content Section',
       modal: true,
       resizable: false,
       autoOpen: false,
       width: 600,
-      height: 200
+      height: 300
     });
 
     $('#add_page_part').click(function(e){
@@ -584,52 +594,58 @@ var page_options = {
       $('#new_page_part_dialog').dialog('open');
     });
 
+    $('#new_page_part_title').on('input propertychange', function() {
+      var part_title = $(this).val();
+
+      if(part_title.length > 0) {
+        var part_slug = getSlug(part_title, slugOptions);
+        $('#new_page_part_slug').val(part_slug);
+      }
+    });
+
     $('#new_page_part_save').click(function(e){
       e.preventDefault();
 
       var part_title = $('#new_page_part_title').val();
+      var part_slug = $('#new_page_part_slug').val();
 
-      if(part_title.length > 0){
-        var tab_title = part_title.toLowerCase().replace(" ", "_");
+      if(part_slug.length > 0){
+        var tab_slug = getSlug(part_slug, slugOptions);
 
-        if ($('#part_' + tab_title).size() === 0) {
+        if ($('#page_part_' + tab_slug).size() === 0) {
           $.get(page_options.new_part_url, {
-              title: part_title
-              , part_index: $('#new_page_part_index').val()
-              , body: ''
+              title: part_title,
+              part_index: $('#new_page_part_index').val(),
+              slug: tab_slug,
+              body: ''
             }, function(data, status){
               $('#submit_continue_button').remove();
               // Add a new tab for the new content section.
               $('#page_part_editors').append(data);
-              page_options.tabs.tabs('add', '#page_part_new_' + $('#new_page_part_index').val(), part_title);
+
+              page_options.tabs.find("ul#page_parts").append("<li><a href='#page_part_new_"+$('#new_page_part_index').val()+"'>"+part_title+"</a></li>");
+              page_options.tabs.tabs("refresh");
+
               // this is here because of https://github.com/refinery/refinerycms/issues/2060
               $("#page-tabs #page_parts li").last().attr("data-index", $('#new_page_part_index').val());
 
-              page_options.tabs.tabs('select', $('#new_page_part_index').val());
+              page_options.tabs.tabs("option", "active", -1);
 
-              // hook into wymeditor to instruct it to select this new tab again once it has loaded.
-              WYMeditor.onload_functions.push(function() {
-                page_options.tabs.tabs('select', $('#new_page_part_index').val());
-              });
-
-              // turn the new textarea into a wymeditor.
-              $('#page_part_new_' + $('#new_page_part_index').val()).appendTo('#page_part_editors')
-              WYMeditor.init();
+              visual_editor_init();
 
               // Wipe the title and increment the index counter by one.
               $('#new_page_part_index').val(parseInt($('#new_page_part_index').val(), 10) + 1);
               $('#new_page_part_title').val('');
-
-              page_options.tabs.find('> ul li a').corner('top 5px');
+              $('#new_page_part_slug').val('');
 
               $('#new_page_part_dialog').dialog('close');
             }, 'html'
           );
         }else{
-          alert("A content section with that title already exists, please choose another.");
+          alert("A content section with that slug already exists, please choose another.");
         }
       }else{
-        alert("You have not entered a title for the content section, please enter one.");
+        alert("You have not entered a slug for the content section, please enter one.");
       }
     });
 
@@ -637,20 +653,31 @@ var page_options = {
       e.preventDefault();
       $('#new_page_part_dialog').dialog('close');
       $('#new_page_part_title').val('');
+      $('#new_page_part_slug').val('');
     });
 
     $('#delete_page_part').click(function(e){
       e.preventDefault();
 
-      if(confirm("This will remove the content section '" + $('#page_parts .ui-tabs-selected a').text() + "' immediately even if you don't save this page, are you sure?")) {
-        var tabId = page_options.tabs.tabs('option', 'selected');
-        $.ajax({
-          url: page_options.del_part_url + '/' + $('#page_parts_attributes_' + tabId + '_id').val(),
-          type: 'DELETE'
-        });
-        page_options.tabs.tabs('remove', tabId);
-        $('#page_parts_attributes_' + tabId + '_id').remove();
+      var tabName = page_options.tabs.find(".ui-tabs-active a").text();
+
+      if(confirm("This will remove the content section '" + tabName + "' immediately even if you don't save this page, are you sure?")) {
+        var tabId = page_options.tabs.find('.ui-tabs-active a').attr('id').match(/\d+/)[0] - 1;
+
+        if($('#page_parts_attributes_' + tabId + '_id').length > 0) {
+          $.ajax({
+            url: page_options.del_part_url + '/' + $('#page_parts_attributes_' + tabId + '_id').val(),
+            type: 'DELETE'
+          });
+        }
+
+        page_options.tabs.find(".ui-tabs-active").remove();
+        page_options.tabs.find("#page_part_" + tabName.toLowerCase()).remove();
+        page_options.tabs.find("#page_part_new_" + tabId).remove();
+        $("[id^=page_parts_attributes_" + tabId + "_]").remove();
         $('#submit_continue_button').remove();
+
+        page_options.tabs.tabs('refresh');
       }
 
     });
@@ -665,7 +692,8 @@ var page_options = {
 
 };
 
-// TODO:  Need to rewrite WYM to accept multiple images. As it stands, only
+// TODO:  Need to rewrite the visual editors to accept multiple images.
+//        As it stands, only
 //        the callback is useful when inserting multiple -- helpful for
 //        the page-images and portfolio engines.
 
@@ -736,18 +764,18 @@ function ImageDialog(options) {
       image_url = resize ? img.attr('data-' + size) : img.attr('data-original');
 
       if (parent) {
-        if ((wym_src = parent.document.getElementById('wym_src')) != null) {
-          wym_src.value = image_url;
+        if ((visual_editor_src = parent.document.getElementById('visual_editor_src')) != null) {
+          visual_editor_src.value = image_url;
         }
-        if ((wym_title = parent.document.getElementById('wym_title')) != null) {
-          wym_title.value = img.attr('title');
+        if ((visual_editor_title = parent.document.getElementById('visual_editor_title')) != null) {
+          visual_editor_title.value = img.attr('title');
         }
-        if ((wym_alt = parent.document.getElementById('wym_alt')) != null) {
-          wym_alt.value = img.attr('alt');
+        if ((visual_editor_alt = parent.document.getElementById('visual_editor_alt')) != null) {
+          visual_editor_alt.value = img.attr('alt');
         }
-        if ((wym_size = parent.document.getElementById('wym_size')) != null
+        if ((visual_editor_size = parent.document.getElementById('visual_editor_size')) != null
             && typeof(geometry) != 'undefined') {
-          wym_size.value = geometry.replace(/[<>=]/g, '');
+          visual_editor_size.value = geometry.replace(/[<>=]/g, '');
         }
       }
     }
@@ -767,21 +795,21 @@ function ImageDialog(options) {
   };
 
   this.init_actions = function() {
-    // get submit buttons not inside a wymeditor iframe
+    // get submit buttons not inside a visual editor iframe
     $('#existing_image_area .form-actions-dialog #submit_button')
-      .not('.wym_iframe_body #existing_image_area .form-actions-dialog #submit_button')
+      .not('.visual_editor_iframe_body #existing_image_area .form-actions-dialog #submit_button')
       .click($.proxy(self.submit_image_choice, self));
 
-    // get cancel buttons not inside a wymeditor iframe
+    // get cancel buttons not inside a visual editor iframe
     $('.form-actions-dialog #cancel_button')
-      .not('.wym_iframe_body .form-actions-dialog #cancel_button')
+      .not('.visual_editor_iframe_body .form-actions-dialog #cancel_button')
       .click($.proxy(close_dialog, self));
 
     $('#existing_image_size_area ul li a').click(function(e) {
       $('#existing_image_size_area ul li').removeClass('selected');
       $(this).parent().addClass('selected');
       $('#existing_image_size_area #wants_to_resize_image').attr('checked', 'checked');
-      self.set_image($('#existing_image_area_content ul li.selected img'));
+      self.toggle_image($('#existing_image_area_content ul li.selected img'));
       e.preventDefault();
     });
 
@@ -790,14 +818,14 @@ function ImageDialog(options) {
         $('#existing_image_size_area ul li:first a').click();
       } else {
         $('#existing_image_size_area ul li').removeClass('selected');
-        self.set_image($('#existing_image_area_content ul li.selected img'));
+        self.toggle_image($('#existing_image_area_content ul li.selected img'));
       }
     });
 
-    image_area = $('#existing_image_area').not('#wym_iframe_body #existing_image_area');
+    image_area = $('#existing_image_area').not('#visual_editor_iframe_body #existing_image_area');
     image_area.find('.form-actions input#submit_button').click($.proxy(function(e) {
       e.preventDefault();
-      $(this.document.getElementById('wym_dialog_submit')).click();
+      $(this.document.getElementById('visual_editor_dialog_submit')).click();
     }, parent));
     image_area.find('.form-actions a.close_dialog').click(close_dialog);
   };
@@ -863,7 +891,7 @@ var image_picker = {
     this.image.src = $(this.image).attr('data-' + size);
     current_image = $(this.container).find(this.picker.options.image_display);
     current_image.replaceWith(
-      $("<img src='"+this.image.src+"?"+Math.floor(Math.random() * 100000)+"' id='"+current_image.attr('id')+"' class='"+this.picker.options.image_display.replace(/^./, '')+" brown_border' />")
+      $("<img src='"+this.image.src+"' id='"+current_image.attr('id')+"' class='"+this.picker.options.image_display.replace(/^./, '')+" brown_border' />")
     );
 
     $(this.container).find(this.picker.options.remove_image_button).show();
@@ -896,8 +924,8 @@ close_dialog = function(e) {
     the_dialog.remove();
   }
 
-  // if there's a wymeditor involved don't try to close the dialog as wymeditor will.
-  if (!$(document.body).hasClass('wym_iframe_body')) {
+  // if there's a visual editor involved don't try to close the dialog as visual editor will.
+  if (!$(document.body).hasClass('visual_editor_iframe_body')) {
     the_body.removeClass('hide-overflow');
     the_dialog.filter(':data(dialog)').dialog('close');
     the_dialog.remove();

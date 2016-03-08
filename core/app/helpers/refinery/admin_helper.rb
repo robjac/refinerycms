@@ -6,5 +6,9 @@ module Refinery
       ::I18n.locale
     end
 
+    def locale_country(locale)
+      locale.to_s.upcase.split('-').last
+    end
+
   end
 end

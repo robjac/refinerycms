@@ -11,6 +11,7 @@ module Refinery
     # Sections may be hidden, in which case they wont display at all.
     class SectionPresenter
       include ActionView::Helpers::TagHelper
+      include ActionView::Helpers::SanitizeHelper
 
       def initialize(initial_hash = {})
         initial_hash.map do |key, value|
@@ -50,15 +51,11 @@ module Refinery
     protected
 
       def content_html(can_use_fallback)
-        if override_html.present?
-          override_html
-        else
-          html_from_fallback(can_use_fallback)
-        end
+        override_html.presence || html_from_fallback(can_use_fallback)
       end
 
       def html_from_fallback(can_use_fallback)
-        fallback_html if fallback_html.present? && can_use_fallback
+        fallback_html.presence if can_use_fallback
       end
 
     private
@@ -66,6 +63,10 @@ module Refinery
       attr_writer :id, :fallback_html, :hidden
 
       def wrap_content_in_tag(content)
+        content = sanitize(content,
+          tags: Loofah::HTML5::WhiteList::ALLOWED_ELEMENTS,
+          attributes: Loofah::HTML5::WhiteList::ALLOWED_ATTRIBUTES
+        )
         content_tag(:section, content_tag(:div, content, :class => 'inner'), :id => id)
       end
     end

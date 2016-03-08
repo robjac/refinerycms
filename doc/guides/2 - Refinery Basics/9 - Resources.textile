@@ -1,5 +1,9 @@
 h2. Resources
 
+This guide will show you how to set a Content-Disposition when working with resources.
+
+endprologue.
+
 h3. How to change Content-Disposition
 
 Refinery comes with support for uploading files (in addition to images).  By default, file uploads are given an http header of +Content-Disposition: attachment; filename=xxx+  
@@ -11,9 +15,10 @@ You can do this by making use of the after_inclusion hook refinery provides:
 <ruby>
 # config/application.rb
 # refinery change content-disipotion
-Refinery::Core::Engine.after_inclusion do
-  Refinery::Resource # force autoload
-  ::Dragonfly[:refinery_resources].content_disposition = nil
+  Refinery::Core::Engine.after_inclusion do
+    Refinery::Resource # force autoload
+    ::Dragonfly.app(:refinery_resources).response_header('Content-Disposition', nil)
+  end
 end
 </ruby>
 

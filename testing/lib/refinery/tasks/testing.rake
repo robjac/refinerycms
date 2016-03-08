@@ -1,24 +1,28 @@
 namespace :refinery do
   namespace :testing do
-    desc "Generates a dummy app for testing"
-    task :dummy_app do
-      unless dummy_app_path.exist?
-        Rake::Task["refinery:testing:setup_dummy_app"].invoke
-        Rake::Task["refinery:testing:setup_extension"].invoke
-        Rake::Task["refinery:testing:init_test_database"].invoke
-      end
+    desc "Generates a dummy application for testing, if one doesn't exist."
+    task :dummy_app => [
+      :report_dummy_app_status,
+      :create_dummy_app
+    ]
+
+    desc "Creates a dummy application for testing"
+    task :create_dummy_app => [
+      :setup_dummy_app,
+      :setup_extension,
+      :init_test_database
+    ]
+
+    desc "raises if there is already a dummy application"
+    task :report_dummy_app_status do
+      raise "\nPlease rm -rf '#{dummy_app_path}'\n\n" if dummy_app_path.exist?
     end
 
+    desc "Sets up just the dummy application for testing, no migrations or extensions"
     task :setup_dummy_app do
-      require 'refinerycms'
+      require 'refinerycms-core'
 
-      params = %w(--quiet)
-      params << "--database=#{ENV['DB']}" if ENV['DB']
-
-      Refinery::DummyGenerator.start params
-
-      # Ensure the database is not there from a previous run.
-      Rake::Task['refinery:testing:drop_dummy_app_database'].invoke
+      Refinery::DummyGenerator.start %W[--quiet --database=#{ENV['DB'].presence || 'sqlite3'}]
 
       Refinery::CmsGenerator.start %w[--quiet --fresh-installation]
 
@@ -41,19 +45,17 @@ namespace :refinery do
     end
 
     desc "Remove the dummy app used for testing"
-    task :clean_dummy_app do
-      Rake::Task['refinery:testing:drop_dummy_app_database'].invoke
+    task :clean_dummy_app => [:drop_dummy_app_database] do
       dummy_app_path.rmtree if dummy_app_path.exist?
     end
 
     desc "Remove the dummy app's database."
     task :drop_dummy_app_database do
-      load 'rails/tasks/engine.rake'
-      Rake::Task['app:db:drop'].invoke
+      system "bundle exec rake -f #{File.join(dummy_app_path, 'Rakefile')} db:drop"
     end
 
     task :init_test_database do
-      system "bundle exec rake -f #{dummy_app_path.join('Rakefile')} db:test:prepare"
+      system "RAILS_ENV=test bundle exec rake -f #{File.join(dummy_app_path, 'Rakefile')} db:create db:migrate"
     end
 
     def dummy_app_path

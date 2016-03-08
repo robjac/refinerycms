@@ -28,8 +28,7 @@ option:
 refinerycms myapp --heroku
 </shell>
 
-NOTE: Heroku relies on "Git":http://git-scm.com/download being installed on your
-system. You should install it beforehand.
+NOTE: Heroku relies on "Git":http://git-scm.com/download being installed on your system. You should install it beforehand.
 
 Watch the output for these lines:
 
@@ -90,7 +89,7 @@ Now we just need to run bundle and add the changes to git:
 bundle install
 git add Gemfile
 git add Gemfile.lock
-git commit "setup for Heroku"
+git commit -m "setup for Heroku"
 </shell>
 
 h4. Step 2: Set up your app on Heroku:
@@ -154,28 +153,11 @@ h4. Step 4 (Option 2): Copy your data from your local database to the Heroku app
 
 If you've developed your website locally, you likely have information in a local
 database that you would like to use. Rather than trying to recreate all that on
-Heroku, Heroku provides you with a task that requires you to install the @taps@
-gem. Be warned, though: Taps has been known to raise errors with Ruby 1.9.3.
-If you receive any errors or the transfer fails the first time, switch to 1.9.2
-to be safe.
-
-You'll want to actually install taps to your system – not just add it to your
-Gemfile.
+Heroku, Heroku provides you with a task to push your local database to Heroku.
 
 <shell>
-gem install taps
+heroku pg:push
 </shell>
-
-Now copy the data to your Heroku app.
-
-<shell>
-heroku db:push
-</shell>
-
-If that command gives you the error "no such file to load -- taps/operation",
-you have run into
-"this Heroku and taps bug":https://github.com/heroku/heroku/issues/69.
-See its comments for fixes to try.
 
 h3. Adding Amazon S3 Support
 

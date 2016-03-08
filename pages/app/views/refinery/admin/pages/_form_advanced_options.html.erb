@@ -6,7 +6,7 @@
     <div class='field'>
       <span class='label_with_help'>
         <%= f.label :parent_id, t('.parent_page') %>
-        <%= refinery_help_tag t('.parent_page_help') %>
+        <%= refinery_help_tag t('.parent_page_help')%>
       </span>
       <%= f.select :parent_id, parent_id_nested_set_options(@page), :include_blank => true %>
     </div>
@@ -16,20 +16,18 @@
         <%= f.label :layout_template, t('.layout_template') %>
         <%= refinery_help_tag t('.layout_template_help') %>
       </span>
-      <%= f.select :layout_template, @valid_layout_templates,
+      <%= f.select :layout_template, valid_layout_templates,
                    template_options(:layout_template, @page) %>
     </div>
     <% end %>
-    <% if Refinery::Pages.use_view_templates %>
     <div class='field'>
       <span class='label_with_help'>
         <%= f.label :view_template, t('.view_template') %>
         <%= refinery_help_tag t('.view_template_help') %>
       </span>
-      <%= f.select :view_template, @valid_view_templates.map { |t| [t.titleize, t] },
+      <%= f.select :view_template, valid_view_templates.map { |t| [t.titleize, t] },
                    template_options(:view_template, @page) %>
     </div>
-    <% end %>
 
     <div class='field'>
       <span class='label_with_help'>
@@ -80,6 +78,8 @@
       <%= f.label :show_in_menu, t('.show_in_menu_description'),
                   :class => "stripped" %>
     </div>
+
+    <%= render 'form_extra_fields_for_more_options', :f => f %>
   </div>
 
   <%= render 'form_advanced_options_seo', :f => f %>

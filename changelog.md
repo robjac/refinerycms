@@ -1,9 +1,95 @@
-## 2.1.0 [unreleased]
+## 3.1.0 [unreleased]
 
+* [See full list](https://github.com/refinery/refinerycms/compare/3-0-stable...master)
+
+
+## 3.0.2 [unreleased]
+
+* Fixed multiple XSS vulnerabilities found by [Shravan Kumar](https://github.com/cor3sm4sh3r) - Sanitize markup. [#3097](https://github.com/refinery/refinerycms/pull/3097). [Brice Sanchez](https://github.com/bricesanchez)
+* Generate `authors` in order to create a valid gemspec. [#3121](https://github.com/refinery/refinerycms/pull/3121). [Brice Sanchez](https://github.com/bricesanchez)
+* Remove deprecated rspec config `treat_symbols_as_metadata_keys_with_true_values`. [#3118](https://github.com/refinery/refinerycms/pull/3118). [Brice Sanchez](https://github.com/bricesanchez)
+* Update `factory_girl_rails` from '~> 4.4.1' to `~> 4.6.0`. [#3114](https://github.com/refinery/refinerycms/pull/3114). [Eric Guo](https://github.com/Eric-Guo)
+* Now welcome to Ruby 2.3.0. [94657b092cec2dde10f77c68205531defaf54476](https://github.com/refinery/refinerycms/commit/94657b092cec2dde10f77c68205531defaf54476). [Philip Arndt](https://github.com/parndt)
+* Fixed engine template seeds : Add page slug. [#3106](https://github.com/refinery/refinerycms/pull/3106). [Brice Sanchez](https://github.com/bricesanchez)
+* Fixed a Dragonfly deprecation warning. [ed7bbea503fc95e5aac5dcc94ce444a3d7c9718d](https://github.com/refinery/refinerycms/commit/ed7bbea503fc95e5aac5dcc94ce444a3d7c9718d). [Philip Arndt](https://github.com/parndt)
+* Now use font-awesome from `font-awesome-sass` gem. [#3108](https://github.com/refinery/refinerycms/pull/3108). [Oleg German](https://github.com/ogerman)
+* Fixed CSRF vulnerability found by [Shravan Kumar](https://github.com/cor3sm4sh3r) - Add protect_from_forgery with: :exception. [#3101](https://github.com/refinery/refinerycms/pull/3101). [Brice Sanchez](https://github.com/bricesanchez)
+* Add line numbers to stack trace. [#3093](https://github.com/refinery/refinerycms/pull/3093). [Jared Beck](https://github.com/jaredbeck)
+* Add icon to image picker warning. [#3075](https://github.com/refinery/refinerycms/pull/3075). [Anita Graham](https://github.com/anitagraham)
+* Specify that we are expecting action_name to be insert. [#3092](https://github.com/refinery/refinerycms/pull/3092). [Philip Arndt](https://github.com/parndt)
+
+* [See full list](https://github.com/refinery/refinerycms/compare/3.0.1...3.0.2)
+
+
+## 3.0.1 [26 January 2015]
+* Set speakingurl-rails to 8.0.0, switch to poltergeist gem. [#3084](https://github.com/refinery/refinerycms/pull/3084). [Philip Arndt](https://github.com/parndt) & [Brice Sanchez](https://github.com/bricesanchez)
+* Install a compatible version of refinerycms-acts-as-indexed [#3079](https://github.com/refinery/refinerycms/issues/3079). [Philip Arndt](https://github.com/parndt)
+* Updated Refinery::Pages.default_parts= config to require both a title and a slug attribute for each part. [#3069](https://github.com/refinery/refinerycms/pull/3069). [Brice Sanchez](https://github.com/bricesanchez)
+
+* [See full list](https://github.com/refinery/refinerycms/compare/3.0.0...3.0.1)
+
+
+## 3.0.0 [19 September 2015]
+
+* Deprecated ':format' syntax in Resources dragonfly_url_format. [#2500](https://github.com/refinery/refinerycms/pull/2500). [Josef Šimánek](https://github.com/simi)
+* Removed Images trust_file_extensions config. [#2500](https://github.com/refinery/refinerycms/pull/2500). [Josef Šimánek](https://github.com/simi)
+* Migrated to Dragonfly ~> 1.0.0. [#2500](https://github.com/refinery/refinerycms/pull/2500). [Josef Šimánek](https://github.com/simi)
+* Removed Pages#cache_pages_backend. [#2375](https://github.com/refinery/refinerycms/pull/2375). [Philip Arndt](https://github.com/parndt)
+* Updated how `_make_sortable` works to take an options hash, requiring manual file changes. [Philip Arndt](https://github.com/parndt)
+* Removed `attr_accessible` in favour of strong parameters. [#2518](https://github.com/refinery/refinerycms/pull/2518). [Philip Arndt](https://github.com/parndt)
+* Removed the Dashboard extension, now the left most tab is selected when logging in. [#2727](https://github.com/refinery/refinerycms/pull/2727). [Philip Arndt](https://github.com/parndt)
+* Removed special 'Refinery Translator' role, introduced in 0.9.22, from the core. [#2730](https://github.com/refinery/refinerycms/pull/2730). [Philip Arndt](https://github.com/parndt)
+* Enabled XHR paging by default, no configuration is needed. [#2733](https://github.com/refinery/refinerycms/pull/2733). [Philip Arndt](https://github.com/parndt)
+* Limited the jquery-ui assets loaded in the backend to the ones we use in the core. [#2735](https://github.com/refinery/refinerycms/pull/2735). [Philip Arndt](https://github.com/parndt)
+* Moved the tabs to the left hand side of the screen. [#2734](https://github.com/refinery/refinerycms/pull/2734). [Isaac Freeman](https://github.com/isaacfreeman) & [Philip Arndt](https://github.com/parndt) & [Brice Sanchez](https://github.com/bricesanchez)
+* Add extra fields partial in Admin Pages form advanced options [#2943](https://github.com/refinery/refinerycms/pull/2943). [Brice Sanchez](https://github.com/bricesanchez)
+* Remove required_label formhelper. [#2954](https://github.com/refinery/refinerycms/pull/2954). [Johan Bruning](https://github.com/johanb)
+* Added ability to create page part title different form slug. [#2875](https://github.com/refinery/refinerycms/pull/2875). [Brice Sanchez](https://github.com/bricesanchez) & [Philip Arndt](https://github.com/parndt) & [Josef Šimánek](https://github.com/simi)
+* Deprecated `part_with_title` method in `Refinery#Page` and `title_matches?` method in `Refinery#PagePart`. [#2875](https://github.com/refinery/refinerycms/pull/2875). [Brice Sanchez](https://github.com/bricesanchez) & [Philip Arndt](https://github.com/parndt) & [Josef Šimánek](https://github.com/simi)
+* Added ability to customize and translate filename. [#2966](https://github.com/refinery/refinerycms/pull/2966). [Brice Sanchez](https://github.com/bricesanchez)
+* Added ability to translate images title and alt attributes. [#2965](https://github.com/refinery/refinerycms/pull/2965). [Brice Sanchez](https://github.com/bricesanchez)
+* Decouple Refinery CMS from Devise. [#2940](https://github.com/refinery/refinerycms/pull/2940). [Philip Arndt](https://github.com/parndt)
+* Refinery CMS Core now requires Rails >= 4.2.3. [#3034](https://github.com/refinery/refinerycms/pull/3034). [Brice Sanchez](https://github.com/bricesanchez)
+* Deprecated `selected_item_or_descendant_item_selected?` method in `Refinery::Pages::MenuPresenter`. [#3038](https://github.com/refinery/refinerycms/pull/3038). [Brice Sanchez](https://github.com/bricesanchez)
+* Added plugin ordering set by config option. [#3053](https://github.com/refinery/refinerycms/pull/3053). [Graham Wagener](https://github.com/gwagener) & [Philip Arndt](https://github.com/parndt)
+* Update and Decouple Refinery CMS from forms generator engine. [42e253d05dc8b8a33beb1c6b25892d7646583573](https://github.com/refinery/refinerycms/commit/42e253d05dc8b8a33beb1c6b25892d7646583573). [CJBrew](https://github.com/CJBrew) & [Philip Arndt](https://github.com/parndt)
+
+* [See full list](https://github.com/refinery/refinerycms/compare/2.1.5...3.0.0)
+
+## 2.1.4 [28 October 2014]
+
+* Changed Dragonfly to load before `:build_middleware_stack` instead of after `:load_config_initializers`.  [#2721](https://github.com/refinery/refinerycms/pull/2721). [Thilo-Alexander Ginkel](https://github.com/ginkel)
+
+* [See full list](https://github.com/refinery/refinerycms/compare/2.1.3...2.1.4)
+
+## 2.1.3 [5 September 2014]
+
+* Fixed an issue where the seeds in a generated form extension weren't idempotent. [#2674](https://github.com/refinery/refinerycms/pull/2674). [Philip Arndt](https://github.com/parndt)
+
+* [See full list](https://github.com/refinery/refinerycms/compare/2.1.2...2.1.3)
+
+## 2.1.2 [14 March 2014]
+
+* Fixed bug where `load_valid_templates` wasn't called for create action and caused an exception when creating a new page and saving it with a blank title. [#2517](https://github.com/refinery/refinerycms/pull/2517). [Uģis Ozols](https://github.com/ugisozols)
+* Fixed bug where adding a link for a translated page via wymeditor it wasn't localised. Also updated the regex for `switch_locale` to match hyphenated language code, e.g. zh-CN or pt-BR. [#2533](https://github.com/refinery/refinerycms/pull/2533). [Daniel Brooker](https://github.com/DanBrooker)
+* [See full list](https://github.com/refinery/refinerycms/compare/2.1.1...2.1.2)
+
+## 2.1.1 [26 November 2013]
+
+* Fixed menu reordering bug when `Refinery::Core.backend_route` was set to something different than `refinery`. [#2368](https://github.com/refinery/refinerycms/pull/2368). [xyz](https://github.com/xyz)
+* Fixed bug in serializelist.js where we were iterating through object fields instead of the array elements. [#2360](https://github.com/refinery/refinerycms/pull/2360). [Uģis Ozols](https://github.com/ugisozols)
+* Bumped `selenium-webdriver` gem dependency version to `~> 2.34.0`.
+* Fixed bug which occurred when trying to save a child page with no default translation. [#2379](https://github.com/refinery/refinerycms/pull/2379). [Jess Brown](https://github.com/jess) & [Uģis Ozols](https://github.com/ugisozols)
+* Upgraded Globalize dependency to `~> 3.0.1`. [#2462](https://github.com/refinery/refinerycms/pull/2462). [Chris Salzberg](https://github.com/shioyama)
+* [See full list](https://github.com/refinery/refinerycms/compare/2.1.0...2.1.1)
+
+## 2.1.0 [5 August 2013]
+
+* Require at least Ruby 1.9.3 and thus drop Ruby 1.8.x support. [#2277](https://github.com/refinery/refinerycms/pull/2277) [Uģis Ozols](https://github.com/ugisozols) & [Philip Arndt](https://github.com/parndt)
 * Removed `:before_javascript_libraries`, `:after_javascript_libraries`, and `:javascript_libraries` content blocks. [#1842](https://github.com/refinery/refinerycms/pull/1842). [Rob Yurkowski](https://github.com/robyurkowski)
 * Refactored WYSIWYG fields into a partial. [#1796](https://github.com/refinery/refinerycms/pull/1796). [Rob Yurkowski](https://github.com/robyurkowski)
 * Shortened all authentication helpers. [#1719](https://github.com/refinery/refinerycms/pull/1719). [Ryan Bigg](https://github.com/radar)
-* Added canonical page id to body to allow CSS selectors to target specific pages instead of including special CSS files. [#1700](https://github.com/refinery/refinerycms/pull/1700) & [#1828](https://github.com/resolve/refinerycms/pull/1828). [Philip Arndt](https://github.com/parndt) & [Graham Wagener](https://github.com/gwagener/)
+* Added canonical page id to body to allow CSS selectors to target specific pages instead of including special CSS files. [#1700](https://github.com/refinery/refinerycms/pull/1700) & [#1828](https://github.com/refinery/refinerycms/pull/1828). [Philip Arndt](https://github.com/parndt) & [Graham Wagener](https://github.com/gwagener/)
 * Improved search functionality by adding cancel search link next to search input, made results_for entry nicer by adding some html to it. [#1922](https://github.com/refinery/refinerycms/pull/1922/). [Marek](https://github.com/keram)
 * Added search functionality to users extension. [#1922](https://github.com/refinery/refinerycms/pull/1934/). [Marek](https://github.com/keram)
 * Extracted locale picker code into separate partial. [#1936](https://github.com/refinery/refinerycms/pull/1936). [Marek](https://github.com/keram)
@@ -38,8 +124,35 @@
 * Fixed issue which allowed identical slugs to exist after page reordering. [#2092](https://github.com/refinery/refinerycms/pull/2092). [Philip Arndt](https://github.com/parndt)
 * Gave crudify's actions the ability to redirect to a particular page of results when `params[:page]` is supplied to the action. [#1861](https://github.com/refinery/refinerycms/issues/1861). [Philip Arndt](https://github.com/parndt)
 * ActsAsIndexed is no longer a required dependency. Integration is achieved by [refinerycms-acts-as-indexed](https://github.com/refinery/refinerycms-acts-as-indexed) instead. [#2162](https://github.com/refinery/refinerycms/issues/2162). [Philip Arndt](https://github.com/parndt)
+* Added Turkish translation [88f37f2a70c](https://github.com/refinery/refinerycms/commit/88f37f2a70c7504a193987ddd309ae15720f4456) and [c42a909eafa](https://github.com/refinery/refinerycms/commit/c42a909eafac721da5e07b3c796e7a07229231d9). [Aslan Gultekin](https://github.com/whowantstolivefo)
+* Allow user-defined geometries in `image#thumbnail_dimensions`. [#2214](https://github.com/refinery/refinerycms/pull/2214). [Javier Saldana](https://github.com/jassa)
+* Added Ukrainian translation. [#2259](https://github.com/refinery/refinerycms/pull/2259). [Tima Maslyuchenko](https://github.com/timsly)
+* Fixed custom page view template preview. [#2219](https://github.com/refinery/refinerycms/pull/2219). [Jean-Philippe Doyle](https://github.com/j15e)
+* Fixed duplicate page part title validation. [#2282](https://github.com/refinery/refinerycms/pull/2282). [David Jones](https://github.com/djones)
+* Fixed nil page bug when `marketable_urls` where set to false and only `path` was passed to `find_by_path_or_id`. [#2278](https://github.com/refinery/refinerycms/pull/2278). [René Cienfuegos](https://github.com/renechz) & [Uģis Ozols](https://github.com/ugisozols)
+* Fixed bug where user plugin order was reset each time user was updated. [#2281](https://github.com/refinery/refinerycms/pull/2281). [Uģis Ozols](https://github.com/ugisozols)
+* Replaced Image#thumbnail geometry parameter with an options hash to support a strip option for reducing thumbnail file size. [#2261](https://github.com/refinery/refinerycms/pull/2261). [Graham Wagener](https://github.com/gwagener/)
+* Added ability to turn off page slug scoping. [#2286](https://github.com/refinery/refinerycms/pull/2286). [Matt Olson](https://github.com/mattolson)
+* Made Crudify's `xhr_paging` option working again. [#2296](https://github.com/refinery/refinerycms/pull/2296). [Chris Irish](https://github.com/supairish)
+* Added draft page support when displaying the home page. [#2298](https://github.com/refinery/refinerycms/pull/2298). [Philip Arndt](https://github.com/parndt)
+* Removed `Refinery::WINDOWS` constant. [Philip Arndt](https://github.com/parndt)
+* Removed `jquery.corner` library and invocations. [#2328](https://github.com/refinery/refinerycms/pull/2328). [Philip Arndt](https://github.com/parndt)
+* Removed `Refinery::Pages.view_template_whitelist` and `Refinery::Pages.use_view_templates` configuration options and enabled setting per page view template to be active by default. [#2331](https://github.com/refinery/refinerycms/pull/2331). [Uģis Ozols](https://github.com/ugisozols)
+* Fixed markup corruption in WYMeditor when using `span` with `style` attribute. [#2350](https://github.com/refinery/refinerycms/pull/2350). [wuboy](https://github.com/wuboy0307)
+* Require jquery-rails ~> 2.3.0. [Francois Harbec](https://github.com/rounders) and [Sergio Cambra](https://github.com/scambra)
+* Unlocked `truncate_html` from 0.5.x as we no longer support Ruby 1.8.x. [Uģis Ozols](https://github.com/ugisozols)
+* [See full list](https://github.com/refinery/refinerycms/compare/2-0-stable...2-1-stable)
 
-* [See full list](https://github.com/refinery/refinerycms/compare/2-0-stable...master)
+## 2.0.11 [unreleased]
+
+* Fixed issue where a superfluous `</div>` would be inserted when using `rails g refinery:engine` for WYSIWYG fields. [#2236](https://github.com/refinery/refinerycms/issues/2236) [Philip Arndt](https://github.com/parndt) and [Rob Yurkowski](https://github.com/robyurkowski)
+* [See full list](https://github.com/refinery/refinerycms/compare/2.0.10...2-0-stable)
+
+## 2.0.10 [15 March 2013]
+* Blocked past insecure Rails versions. [Philip Arndt](https://github.com/parndt)
+* Fixed problems with editing pages in different locales. [Philip Arndt](https://github.com/parndt)
+* Locked `truncate_html` to 0.5.x to ensure Ruby 1.8.x compatibility. [Uģis Ozols](https://github.com/ugisozols)
+* [See full list](https://github.com/refinery/refinerycms/compare/2.0.9...2.0.10)
 
 ## 2.0.9 [21 November 2012]
 * Allowed extra parameters to be passed when creating image. [#1914](https://github.com/refinery/refinerycms/pull/1914). [tbuyle](https://github.com/tbuyle)

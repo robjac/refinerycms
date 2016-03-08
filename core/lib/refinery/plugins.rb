@@ -9,12 +9,7 @@ module Refinery
       @plugins = Array.new(*args)
     end
 
-    def_delegators :@plugins, :<<, :each, :delete_if
-
-    def find_by_model(model)
-      model = model.constantize if model.is_a? String
-      detect { |plugin| plugin.activity.any? {|activity| activity.klass == model } }
-    end
+    def_delegators :@plugins, :<<, :each, :delete_if, :length, :size, :to_ary, :unshift
 
     def find_by_name(name)
       detect { |plugin| plugin.name == name }
@@ -25,8 +20,10 @@ module Refinery
       detect { |plugin| plugin.title == title }
     end
 
+    # TODO: Review necessary?
     def in_menu
-      self.class.new(reject(&:hide_from_menu))
+      items_in_menu = reject(&:hide_from_menu)
+      self.class.new((prioritised & items_in_menu) | items_in_menu)
     end
 
     def names
@@ -41,11 +38,22 @@ module Refinery
       map(&:title)
     end
 
-    class << self
-      def active
-        @active_plugins ||= new
-      end
+    def first_in_menu_with_url
+      find(&:landable?)
+    end
 
+    def first_url_in_menu
+      first_in_menu_with_url.try(:url)
+    end
+
+    def update_positions(plugin_list)
+      plugins = plugin_list.map {|p| find_by_name(p) }.reject(&:blank?)
+      plugins.each_with_index do |plugin, index|
+        plugin.update_attributes(position: index)
+      end
+    end
+
+    class << self
       def always_allowed
         new registered.select(&:always_allow_access)
       end
@@ -53,26 +61,14 @@ module Refinery
       def registered
         @registered_plugins ||= new
       end
-
-      def activate(name)
-        active << registered[name] if registered[name] && !active[name]
-      end
-
-      def deactivate(name)
-        active.delete_if {|p| p.name == name}
-      end
-
-      def set_active(names)
-        @active_plugins = new
-
-        names.each do |name|
-          activate(name)
-        end
-      end
     end
 
     private
 
     attr_reader :plugins
+
+    def prioritised
+      Refinery::Core.config.plugin_priority.map { |name| find_by_name(name) }
+    end
   end
 end

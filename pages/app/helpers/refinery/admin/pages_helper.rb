@@ -3,24 +3,33 @@ module Refinery
     module PagesHelper
       def parent_id_nested_set_options(current_page)
         pages = []
-        nested_set_options(::Refinery::Page, current_page) {|page| pages << page}
+        nested_set_options(::Refinery::Page, current_page) { |page| pages << page}
         # page.title needs the :translations association, doing something like
         # nested_set_options(::Refinery::Page.includes(:translations), page) doesn't work, yet.
         # See https://github.com/collectiveidea/awesome_nested_set/pull/123
-        ActiveRecord::Associations::Preloader.new(pages, :translations).run
-        pages.map {|page| ["#{'-' * page.level} #{page.title}", page.id]}
+        ActiveRecord::Associations::Preloader.new.preload(pages, :translations)
+        pages.map { |page| ["#{'-' * page.level} #{page.title}", page.id]}
       end
 
       def template_options(template_type, current_page)
-        return {} if current_page.send(template_type)
+        html_options = { :selected => send("default_#{template_type}", current_page) }
 
-        if current_page.parent_id?
-          # Use Parent Template by default.
-          { :selected => current_page.parent.send(template_type) }
-        else
-          # Use Default Template (First in whitelist)
-          { :selected => Refinery::Pages.send("#{template_type}_whitelist").first }
+        if (template = current_page.send(template_type).presence)
+          html_options.update :selected => template
+        elsif current_page.parent_id? && !current_page.send(template_type).presence
+          template = current_page.parent.send(template_type).presence
+          html_options.update :selected => template if template
         end
+
+        html_options
+      end
+
+      def default_view_template(current_page)
+        current_page.link_url == "/" ? "home" : "show"
+      end
+
+      def default_layout_template(current_page)
+        "application"
       end
 
       # In the admin area we use a slightly different title
@@ -41,8 +50,9 @@ module Refinery
       # We show the title from the next available locale
       # if there is no title for the current locale
       def page_title_with_translations(page)
-        page.title.presence || page.translations.detect {|t| t.title.present?}.title
+        page.title.presence || page.translations.detect { |t| t.title.present?}.title
       end
+
     end
   end
 end

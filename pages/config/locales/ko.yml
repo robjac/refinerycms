@@ -46,7 +46,6 @@ ko:
         form_advanced_options:
           page_options: 페이지 설정
           parent_page: 상위 페이지
-          custom_title: 임의 제목 설정
           show_in_menu_title: 메뉴에 보이기
           show_in_menu_description: 이 페이지를 사이트 메뉴에 포함시킵니다.
           show_in_menu_help: 사이트 메뉴에 페이지가 보이지 않도록 하려면 이 설정을 해제하세요. 직접 링크는 가능하지만 메뉴에 보이기 원치 않는 페이지에 사용하면 유용합니다.
@@ -54,16 +53,14 @@ ko:
           skip_to_first_child_label: 방문자들을 첫 하위 페이지로 보냅니다.
           skip_to_first_child_help: 이것을 설정하면 이 페이지가 첫 하위 페이지로 링크됩니다. 여러 페이지를 한 데 묶을 때 유용한 옵션입니다.
           link_url: 다른 웹 사이트나 페이지로 포워딩
-          link_url_help: 이 페이지를 클릭했을 때 다른 웹사이트나 페이지로 이동하게 하려면 여기에 http://google.com과 같은 주소를 입력하세요.
+          link_url_help: 이 페이지를 클릭했을 때 다른 웹사이트나 페이지로 이동하게 하려면 여기에 https://google.com과 같은 주소를 입력하세요.
           parent_page_help: 이 페이지의 상위 페이지를 목록에서 선택할 수 있습니다. 이 페이지를 최상위 페이지로 만들고 싶다면 빈 칸으로 남겨 두세요.
-          custom_title_help: 페이지가 메뉴에서 보이는 것과 다른 제목을 가지도록 하고 싶다면 &apos;텍스트&apos;를 선택하여 새 제목을 입력하세요.
         actions:
           create_new_page: 새 페이지
           reorder_pages: 페이지 재정렬
           reorder_pages_done: 재정렬 완료
         records:
           no_pages_yet: 페이지가 없습니다. "새 페이지"를 클릭하여 페이지를 추가하세요.
-        translator_access: 해당 언어로 페이지를 수정할 권한이 없습니다.
   activerecord:
     models:
       refinery/page: 페이지
